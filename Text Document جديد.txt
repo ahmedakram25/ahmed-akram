@@ -1,0 +1,170 @@
+//AHMED AKRAM MAHMOUD 
+// 200042659
+#include <stdio.h>       //  library
+#include <ctype.h>       // library
+
+/* Global declarations */
+int charClass;           // store the char class 
+char lexeme[100];        // store the current lexeme (string of characters)
+char nextChar;           //hold the next char from input
+int lexLen;              // Length of the current lexeme
+int token;               // hold the current token
+int nextToken;           //  hold the next token
+FILE *in_fp;             // File pointer for input file
+
+/* Function declarations */
+void addChar();          // add nextChar to lexeme
+void getChar();          // read the next character and set charClass
+void getNonBlank();      // skip whitespace
+int lex();               // Lexical analyzer function
+
+/* Character classes */
+#define LETTER 0         // Character class for letters
+#define DIGIT 1          // Character class for digits
+#define UNKNOWN 99       // Character class for unknown characters
+
+/* Token codes */
+#define INT_LIT 10       // Integer literal token
+#define IDENT 11         // Identifier token
+#define ASSIGN_OP 20     // Assignment operator token
+#define ADD_OP 21        // Addition operator token
+#define SUB_OP 22        // Subtraction operator token
+#define MULT_OP 23       // Multiplication operator token
+#define DIV_OP 24        // Division operator token
+#define LEFT_PAREN 25    // Left parenthesis token
+#define RIGHT_PAREN 26   // Right parenthesis token
+
+/******************************************************/
+/* Main driver */
+int main() {
+    // Open the input file and process its contents
+    if ((in_fp = fopen("front.in", "r")) == NULL)    // Try to open "front.in" in read mode
+        printf("ERROR - cannot open front.in \n");   // Print error message if file can't be opened
+    else {
+        getChar();                                   // Get the first character from the file
+        do {
+            lex();                                   // Call lexical analyzer
+        } while (nextToken != EOF);                  // Repeat until end of file
+    }
+    return 0;                                        // Exit the program
+}
+
+/*****************************************************/
+/* lookup - function to identify operators and parentheses */
+int lookup(char ch) {
+    switch (ch) {
+        case '(':                                    // If character is left parenthesis
+            addChar();                               // Add it to lexeme
+            nextToken = LEFT_PAREN;                  // Set token to LEFT_PAREN
+            break;
+        case ')':                                    // Right parenthesis
+            addChar();
+            nextToken = RIGHT_PAREN;
+            break;
+        case '+':                                    // Plus sign
+            addChar();
+            nextToken = ADD_OP;
+            break;
+        case '-':                                    // Minus sign
+            addChar();
+            nextToken = SUB_OP;
+            break;
+        case '*':                                    // Asterisk
+            addChar();
+            nextToken = MULT_OP;
+            break;
+        case '/':                                    // Forward slash
+            addChar();
+            nextToken = DIV_OP;
+            break;
+        default:                                     // Any unknown character
+            addChar();
+            nextToken = EOF;                         // Set token to EOF
+            break;
+    }
+    return nextToken;                                // Return the token found
+}
+
+/*****************************************************/
+/* addChar - adds nextChar to the lexeme array */
+void addChar() {
+    if (lexLen <= 98) {                              
+        lexeme[lexLen++] = nextChar;                 // Add character and increment length
+        lexeme[lexLen] = 0;                          // Null-terminate the string
+    } else {
+        printf("Error - lexeme is too long \n");     // Error message 
+    }
+}
+
+/*****************************************************/
+/* getChar - gets next character from file and sets charClass */
+void getChar() {
+    if ((nextChar = getc(in_fp)) != EOF) {           // Get next character if not EOF
+        if (isalpha(nextChar))                       // Check if it's a letter
+            charClass = LETTER;                      // Set char class to LETTER
+        else if (isdigit(nextChar))                  // Check if Is a digit
+            charClass = DIGIT;                       // Set char class to DIGIT
+        else
+            charClass = UNKNOWN;                     // Otherwise, set to UNKNOWN
+    } else {
+        charClass = EOF;                             // If EOF, set character class accordingly
+    }
+}
+
+/*****************************************************/
+/* getNonBlank - skips over whitespace characters */
+void getNonBlank() {
+    while (isspace(nextChar))                        // While the current character is space
+        getChar();                                   // Keep reading next characters
+}
+
+/*****************************************************/
+/* lex - lexical analyzer for simple arithmetic expressions */
+int lex() {
+    lexLen = 0;                                      // Reset length of current lexeme
+    getNonBlank();                                   // Skip any whitespace
+    switch (charClass) {
+        // Handle identifiers (start with letter)
+        case LETTER:
+            addChar();
+            getChar();
+            while (charClass == LETTER || charClass == DIGIT) {
+                addChar();
+                getChar();
+            }
+            nextToken = IDENT;                       // Set token to IDENTIFIER
+            break;
+
+        // Handle integer literals
+        case DIGIT:
+            addChar();
+            getChar();
+            while (charClass == DIGIT) {
+                addChar();
+                getChar();
+            }
+            nextToken = INT_LIT;                     // Set token to INTEGER_LITERAL
+            break;
+
+        // Handle operators or parentheses
+        case UNKNOWN:
+            lookup(nextChar);                        // Lookup the operator
+            getChar();                               // Get the next character
+            break;
+
+        // Handle end of file
+        case EOF:
+            nextToken = EOF;                         // Set token to EOF
+            lexeme[0] = 'E';                         // Store "EOF" as lexeme
+            lexeme[1] = 'O';
+            lexeme[2] = 'F';
+            lexeme[3] = 0;
+            break;
+    }
+
+    // Print the token and corresponding lexeme
+    printf("Next token is: %d, Next lexeme is %s\n", nextToken, lexeme);
+    return nextToken;                                // return the next  token
+}
+
+
